@@ -3,7 +3,7 @@ import sys
 
 from PyQt5 import QtWidgets
 
-from hellow import Ui_MainWindow
+from hello import Ui_MainWindow
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
