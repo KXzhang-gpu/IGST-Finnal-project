@@ -131,11 +131,13 @@ def distance_transform(image, mode='chessboard'):
     raise ValueError('fatal error, check the code!')
 
 
-def skeletonization(image, reconstructed=False):
+def skeletonization(image, get_sub_skeleton=False):
     image = np.asarray(image)
     subset = image.copy()
     kernel = disc_SE
     skeleton = np.zeros_like(image)
+    if get_sub_skeleton:
+        sub_skeletons = []
     r = 1
     while np.sum(subset) > 0:
         subset = image.copy()
@@ -144,19 +146,23 @@ def skeletonization(image, reconstructed=False):
         subset = subset - opening(subset, kernel)
         r += 1
         skeleton = skeleton + subset
+        if get_sub_skeleton:
+            sub_skeletons.append((subset > 0).astype(np.uint8))  # noqa
     skeleton[skeleton > 0] = 1
-    if reconstructed:
-        return skeleton, r - 1
+    if get_sub_skeleton:
+        return skeleton, sub_skeletons
     return skeleton
 
 
-def skeleton_reconstruction(skeleton, r_max):
-    skeleton = np.array(skeleton)
+def skeleton_reconstruction(sub_skeletons):
     kernel = disc_SE
-    image = np.zeros_like(skeleton)
-    for r in range(r_max):
-        pass
-    pass
+    image = np.zeros_like(sub_skeletons[0])
+    for r, sub_skeleton in enumerate(sub_skeletons):
+        for i in range(r + 1):
+            sub_skeleton = binary_dilation(sub_skeleton, kernel)
+        image = image + sub_skeleton
+    image[image > 0] = 1
+    return image
 
 
 if __name__ == '__main__':
@@ -166,7 +172,7 @@ if __name__ == '__main__':
 
     # import skimage.morphology as sm
 
-    image_path = r'.\skeleton_test.png'
+    image_path = r'.\horse.png'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     image = (image > 50).astype(np.uint8)
     kernel = np.array([[0, 1, 0],
@@ -177,13 +183,16 @@ if __name__ == '__main__':
     # output = binary_erosion(image, kernel=big_kernel)
     # output = opening(image, kernel=kernel)
     # output = distance_transform(image, mode='Euclidean')
-    output = skeletonization(image)
+    output, subs = skeletonization(image, get_sub_skeleton=True)
+    restore = skeleton_reconstruction(subs)
     end = time.time()
     print(end - start)
 
-    plt.subplot(211)
+    plt.subplot(311)
     plt.imshow(image, cmap='gray')
-    plt.subplot(212)
+    plt.subplot(312)
     plt.imshow(output, cmap='binary')
+    plt.subplot(313)
+    plt.imshow(restore, cmap='gray')
     plt.show()
     # sm.binary_erosion
