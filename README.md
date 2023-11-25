@@ -4,6 +4,8 @@ This is code for Image Guided Surgery and Therapy finnal project
 ## Requirements:
 - PyQt == 5.15
 - numpy >= 1.26
+- opencv-python
+- matplotlib
 
 ## Contexts
 ### Project-1 
