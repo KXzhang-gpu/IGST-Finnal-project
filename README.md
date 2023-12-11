@@ -23,6 +23,10 @@ This is code for Image Guided Surgery and Therapy finnal project
   - Realize Gaussian filter and Median filter
   - Using the operator and filter to realize edge detection and noise reduction
 - The code of project-2 is here : [convolution.py](convolution.py)
+  - There are 3 ways to implement convolution operation:
+    1. Implementation according to defination: Calculate the convolution with the kernel at each position, as seen at the function conv().
+    2. Img2Col convolution acceleration algorithm: Convert the image into a vector and then calculate the results all at once, you can find it at the function conv2d_img2col()
+    3. Use FFT to convert spatial domain convolution into frequency domain multiplication, enabling direct calculation. Then, use iFFT to obtain the tracking result, implementation at function conv2d_fft()
 
 ### Project-3
 - sample Morphology algorithms
@@ -38,3 +42,17 @@ This is code for Image Guided Surgery and Therapy finnal project
   - Realize morphological skeleton
   - Realize morphological skeleton restoration
 - The code of project-4 is here : [morphology.py](morphology.py)
+
+### Project-5
+- complex Morphology algorithms
+- Requirements:
+  - Realize gray scale erosion, dilation, opening, closing
+- The code of project-5 is here : [morphology.py](morphology.py)
+
+### Project-6
+- complex Morphology algorithms
+- Requirements:
+  - Realize morphological edge detection and gradient
+  - Realize conditional dilation of binary image
+  - Realize gray scale reconstruction
+- The code of project-6 is here : [morphology.py](morphology.py)
