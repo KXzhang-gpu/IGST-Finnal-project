@@ -77,7 +77,7 @@ def entropy(histogram: np.array) -> int:
     return thresh
 
 
-if __name__ == '__main__':
+def main():
     import time
     import cv2
     from matplotlib import pyplot as plt
@@ -102,3 +102,7 @@ if __name__ == '__main__':
     # plt.imshow(image_thresh, cmap='gray')
     # plt.show()
     # print(thresh)
+
+
+if __name__ == '__main__':
+    main()

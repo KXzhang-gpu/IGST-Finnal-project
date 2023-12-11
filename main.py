@@ -7,14 +7,13 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import uic
 from PyQt5.QtGui import QImage, QPixmap, QFont, QPainter
-from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QGraphicsScene
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QGraphicsScene, QMenu, QAction
+from PyQt5.QtCore import Qt
 
 from threshold import *
 from convolution import conv2d_img2col as conv2d
 from convolution import Gaussian_filter, median_filter
 from morphology import *
-from draw_board_Qt import DrawingScene
 
 import warnings
 
@@ -378,7 +377,55 @@ class mainWindow(QMainWindow):
         self.spinBox.valueChanged.connect(self._spinbox_change)
         self.binSEsizeSpin.valueChanged.connect(self._binSEsizeSpin_change)
         self.progressBar.setVisible(False)
-        # self.setMarkerBtn.setToolTip('please draw your marker at left bottom graphic window')
+        self.viewlist = [self.viewRightTop, self.viewLeftBottom, self.viewRightBottom]
+        self.viewRightTop.customContextMenuRequested.connect(self.customContextMenuRT)
+        self.viewLeftBottom.customContextMenuRequested.connect(self.customContextMenuLB)
+        self.viewRightBottom.customContextMenuRequested.connect(self.customContextMenuRB)
+
+    def customContextMenuRT(self, pos):
+        view = self.viewRightTop
+        menu = QMenu(view)
+
+        save_action = QAction("save image", view)
+        save_action.triggered.connect(lambda:  self.saveImage(view))
+        menu.addAction(save_action)
+
+        menu.exec_(view.mapToGlobal(pos))
+
+    def customContextMenuLB(self, pos):
+        view = self.viewLeftBottom
+        menu = QMenu(view)
+
+        save_action = QAction("save image", view)
+        save_action.triggered.connect(lambda:  self.saveImage(view))
+        menu.addAction(save_action)
+
+        menu.exec_(view.mapToGlobal(pos))
+
+    def customContextMenuRB(self, pos):
+        view = self.viewRightBottom
+        menu = QMenu(view)
+
+        save_action = QAction("save image", view)
+        save_action.triggered.connect(lambda:  self.saveImage(view))
+        menu.addAction(save_action)
+
+        menu.exec_(view.mapToGlobal(pos))
+
+    @staticmethod
+    def saveImage(view):
+        file_path, _ = QFileDialog.getSaveFileName(view, "Save image", "image", "*.jpg;*.tif;*.png;;All Files(*)")
+        # print(view.objectName)
+        if file_path:
+            scene = view.scene()
+
+            image = QImage(view.viewport().size(), QImage.Format_ARGB32)
+            image.fill(Qt.transparent)
+
+            painter = QPainter(image)
+            scene.render(painter)
+            painter.end()
+            image.save(file_path)
 
     def _splider_change(self):
         self.spinBox.setValue(self.splider.value())
@@ -394,9 +441,8 @@ class mainWindow(QMainWindow):
     def _clear(self):
         # clear view
         scene = QGraphicsScene()
-        self.viewRightTop.setScene(scene)
-        self.viewLeftBottom.setScene(scene)
-        self.viewRightBottom.setScene(scene)
+        for view in self.viewlist:
+            view.setScene(scene)
         self.labelRT.setText('None')
         self.labelLB.setText('None')
         self.labelRB.setText('None')

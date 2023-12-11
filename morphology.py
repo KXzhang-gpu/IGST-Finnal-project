@@ -291,7 +291,7 @@ def grayscale_reconstruction(marker, mask, kernel, anchor=(-1, -1)):
     return marker
 
 
-if __name__ == '__main__':
+def main():
     import time
     import cv2
     from matplotlib import pyplot as plt
@@ -333,3 +333,7 @@ if __name__ == '__main__':
     plt.imshow(output, cmap='gray')
     plt.show()
     # sm.binary_erosion
+
+if __name__ == '__main__':
+    main()
+

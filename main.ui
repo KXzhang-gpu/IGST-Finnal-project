@@ -60,7 +60,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QGraphicsView" name="viewRightBottom"/>
+         <widget class="QGraphicsView" name="viewRightBottom">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -89,7 +93,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QGraphicsView" name="viewRightTop"/>
+         <widget class="QGraphicsView" name="viewRightTop">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -118,7 +126,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QGraphicsView" name="viewLeftBottom"/>
+         <widget class="QGraphicsView" name="viewLeftBottom">
+          <property name="contextMenuPolicy">
+           <enum>Qt::CustomContextMenu</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -153,7 +165,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QGraphicsView" name="viewLeftTop"/>
+         <widget class="QGraphicsView" name="viewLeftTop">
+          <property name="contextMenuPolicy">
+           <enum>Qt::DefaultContextMenu</enum>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -191,7 +207,7 @@
 }</string>
         </property>
         <property name="currentIndex">
-         <number>5</number>
+         <number>0</number>
         </property>
         <property name="documentMode">
          <bool>false</bool>
