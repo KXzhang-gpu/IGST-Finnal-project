@@ -6,7 +6,7 @@ def threshold(image, thresh: int) -> np.array:
     image = np.asarray(image)
     image = image.copy()
     image[image <= thresh] = 0
-    image[image > thresh] = 255
+    image[image > thresh] = 1
     return image
 
 
@@ -37,8 +37,8 @@ def otsu(histogram: np.array) -> int:
     # maximize the Variance
     Var_max = 0
     thresh = 0
-    for T in range(0, 255):
-        Var = np.square(mean[255] * cdf[T] - mean[T]) / (cdf[T] * (1 - cdf[T]))
+    for T in range(1, 256):
+        Var = np.square(mean[255] * cdf[T] - mean[T]) / (cdf[T] * (1 - cdf[T]) + 1e-5)
         if Var > Var_max:
             Var_max = Var
             thresh = T

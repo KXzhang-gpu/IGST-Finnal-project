@@ -12,6 +12,23 @@ Sobel_kernel_x = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]]
 Sobel_kernel_y = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
 
 
+def padding_non_suqare(image, k_shape, padding):
+    """
+    padding function for non-suqare kernel
+    image: input image
+    k_shape: tuple
+        the shape of kernal (k_h, k_w)
+    """
+    h, w = k_shape
+    h_pad, w_pad = [h // 2, h // 2], [w // 2, w // 2]
+    if h % 2 == 0:
+        h_pad[1] = h_pad[1] - 1
+    if w % 2 == 0:
+        w_pad[1] = w_pad[1] - 1
+    pad_width = (h_pad, w_pad)
+    return np.pad(image, pad_width=pad_width, mode=padding)
+
+
 def conv2d(image, kernel, padding='constant', flip=False):
     """
     The convolution operator for 2d gray image
@@ -25,6 +42,7 @@ def conv2d(image, kernel, padding='constant', flip=False):
     padding : str, optional
         padding mode for convolution, including 'constant', 'reflect', 'symmetric', 'wrap'
         more padding mode can be found at numpy.pad() parameter 'mode'
+    flip: bool, optional
     """
     image = np.array(image)
     kernel = np.asarray(kernel)
@@ -55,6 +73,7 @@ def conv2d_img2col(image, kernel, padding='constant', flip=False):
     padding : str, optional
         padding mode for convolution, including 'constant', 'reflect', 'symmetric', 'wrap'
         more padding mode can be found at numpy.pad() parameter 'mode'
+    flip : bool, optional
     """
     image = np.array(image)
     kernel = np.asarray(kernel)
@@ -62,7 +81,8 @@ def conv2d_img2col(image, kernel, padding='constant', flip=False):
     if flip:
         kernel = kernel[::-1, ...][:, ::-1]
 
-    image = np.pad(image, pad_width=kernel.shape[0] // 2, mode=padding)
+    # image = np.pad(image, pad_width=kernel.shape[0] // 2, mode=padding)
+    image = padding_non_suqare(image, kernel.shape, padding)
 
     # for images having additional channel:
     # sub_shape = (other_channels..., output_h, output_w, kernel_h, kernel_w)
@@ -102,13 +122,13 @@ def edge_operation(image, mode='Sobel'):
     return g_x, g_y
 
 
-def Gaussian_filter(image, kernel_size: int, sigma: int):
+def Gaussian_filter(image, kernel_size: int, sigma: float):
     gaussian_kernel = creat_gaussian_kernel(kernel_size, sigma)
     blur_image = conv2d_img2col(image, gaussian_kernel)
     return blur_image
 
 
-def creat_gaussian_kernel(kernel_size: int, sigma: int):
+def creat_gaussian_kernel(kernel_size: int, sigma: float):
     if sigma == 0:
         # if sigma==0, it is computed from ksize as following, according to cv2.getGaussianKernel
         sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8
@@ -203,21 +223,23 @@ def fast_median_filter(image, kernel_size: int):
 if __name__ == '__main__':
     import time
     import cv2
-    from scipy import signal
+    # from scipy import signal
     from matplotlib import pyplot as plt
 
     # image = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 2, 3], [4, 5, 6], [7, 8, 9]]
     # image = np.random.randint(0, 255, (543, 543))
-    image_path = r'.\dilation_test.png'
+    image_path = r'.\classical_image.png'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    kernel = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
+    # kernel = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
+    # kernel = np.ones((100, 1))
+    kernel = np.ones((3, 3))
     start = time.time()
     # output = conv2d(image, kernel)
     # output = conv2d_fft(image, kernel)
-    # output = conv2d_img2col(image, kernel)
+    output = conv2d_img2col(image, kernel, flip=True)
     # output_refer = signal.convolve2d(image, kernel, mode='same')
     # print((output == output_refer).all())
-    output = median_filter(image, kernel_size=11)
+    # output = median_filter(image, kernel_size=11)
     # output = fast_median_filter(image, kernel_size=11)
     end = time.time()
     print(end - start)
