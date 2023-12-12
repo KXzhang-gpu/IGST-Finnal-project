@@ -7,7 +7,7 @@ This is code for Image Guided Surgery and Therapy finnal project
 - opencv-python
 - matplotlib
 
-## Contexts
+## Project details
 ### Project-1 
 - Histogram and threshold
 - Requirements：
