@@ -54,6 +54,17 @@ def get_disk_se(radius):
     return se
 
 
+class DropScene(QGraphicsScene):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def dragMoveEvent(self, event) -> None:
+        event.accept()
+
+    def dropEvent(self, event) -> None:
+        self.parent().dropEvent(event)
+
+
 class mainWindow(QMainWindow):
     def __init__(self):
         super(mainWindow, self).__init__()
@@ -84,12 +95,20 @@ class mainWindow(QMainWindow):
         # load image form given path
         file_path, _ = QFileDialog.getOpenFileName(self, "Open image", "img", "*.jpg;*.tif;*.png;;All Files(*)")
         if file_path:
-            # clear pervious image view and data
-            self._clear()
-            self.filePath.setText(file_path)
             # print image to ui
-            self.image = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
-            self.print_image(self.image, self.viewLeftTop, self.labelLT, 'Original image')
+            try:
+                image = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
+                if image is not None:
+                    self.image = image
+                    self.print_image(self.image, self.viewLeftTop, self.labelLT, 'Original image')
+                    # clear pervious image view and data
+                    self._clear()
+                    self.filePath.setText(file_path)
+                    return
+            except Exception:
+                pass
+            msg_box = QMessageBox(QMessageBox.Critical, 'Error', 'This file may not be an image!')
+            msg_box.exec_()
 
     @check_image_loaded
     def _histogramBtn_click(self):
@@ -454,7 +473,7 @@ class mainWindow(QMainWindow):
 
     def _clear(self):
         # clear view
-        scene = QGraphicsScene()
+        scene = DropScene(self)
         for view in self.viewlist:
             view.setScene(scene)
         self.labelRT.setText('None')
@@ -472,7 +491,7 @@ class mainWindow(QMainWindow):
         if label is not None:
             label.setText(title)
         # build Scene
-        scene = QGraphicsScene()
+        scene = DropScene(self)
         view.setScene(scene)
         # transform image to Qt
         image_w, image_h = image.shape
@@ -520,6 +539,32 @@ class mainWindow(QMainWindow):
             sys.exit(0)
         else:
             event.ignore()
+
+    def dragEnterEvent(self, event) -> None:
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event) -> None:
+        for url in event.mimeData().urls():
+            if url.isLocalFile() and url.toLocalFile():
+                file_path = url.toLocalFile()
+                if file_path:
+                    # print image to ui
+                    try:
+                        image = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
+                        if image is not None:
+                            self.image = image
+                            self.print_image(self.image, self.viewLeftTop, self.labelLT, 'Original image')
+                            # clear pervious image view and data
+                            self._clear()
+                            self.filePath.setText(file_path)
+                            return
+                    except Exception:
+                        pass
+                    msg_box = QMessageBox(QMessageBox.Critical, 'Error', 'This file may not be an image!')
+                    msg_box.exec_()
 
 
 if __name__ == '__main__':
