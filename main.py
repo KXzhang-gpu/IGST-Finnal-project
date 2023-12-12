@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+import os
 import sys
 
 import cv2
@@ -56,15 +57,12 @@ def get_disk_se(radius):
 class mainWindow(QMainWindow):
     def __init__(self):
         super(mainWindow, self).__init__()
-        uic.loadUi('./main.ui', self)
+        ui_path = os.path.join(os.path.dirname(__file__), 'mainWindow.ui')
+        uic.loadUi(ui_path, self)
         self.setFont(QFont('times new roman'))
-        self.image = None
-        self.thres_image = None
-        self.sub_skeletons = None
-        self.binMarker = None
-        self.grayMarker = None
         self.button_init()
         self.component_init()
+        self.data_init()
 
     def button_init(self):
         # initialize all the button
@@ -85,12 +83,12 @@ class mainWindow(QMainWindow):
     def _selectBtn_click(self):
         # load image form given path
         file_path, _ = QFileDialog.getOpenFileName(self, "Open image", "img", "*.jpg;*.tif;*.png;;All Files(*)")
-        if not file_path == '':
+        if file_path:
             # clear pervious image view and data
             self._clear()
             self.filePath.setText(file_path)
             # print image to ui
-            self.image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+            self.image = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
             self.print_image(self.image, self.viewLeftTop, self.labelLT, 'Original image')
 
     @check_image_loaded
@@ -288,7 +286,7 @@ class mainWindow(QMainWindow):
     def _binMarkerBtn_click(self):
         # load image form given path
         file_path, _ = QFileDialog.getOpenFileName(self, "Set your Marker", "img", "*.jpg;*.tif;*.png;;All Files(*)")
-        if not file_path == '':
+        if file_path:
             # print marker to ui
             self.binMarker = threshold(cv2.imread(file_path, cv2.IMREAD_GRAYSCALE), 50)
             h, w = self.image.shape
@@ -382,12 +380,21 @@ class mainWindow(QMainWindow):
         self.viewLeftBottom.customContextMenuRequested.connect(self.customContextMenuLB)
         self.viewRightBottom.customContextMenuRequested.connect(self.customContextMenuRB)
 
+    def data_init(self):
+        self.image = None
+        self.thres_image = None
+        self.sub_skeletons = None
+        self.binMarker = None
+        self.grayMarker = None
+        self.image_view_list = [None, None, None]
+        self.title_view_list = ['image', 'image', 'image']
+
     def customContextMenuRT(self, pos):
         view = self.viewRightTop
         menu = QMenu(view)
 
         save_action = QAction("save image", view)
-        save_action.triggered.connect(lambda:  self.saveImage(view))
+        save_action.triggered.connect(lambda:  self.saveImage(view)) # noqa
         menu.addAction(save_action)
 
         menu.exec_(view.mapToGlobal(pos))
@@ -397,7 +404,7 @@ class mainWindow(QMainWindow):
         menu = QMenu(view)
 
         save_action = QAction("save image", view)
-        save_action.triggered.connect(lambda:  self.saveImage(view))
+        save_action.triggered.connect(lambda:  self.saveImage(view)) # noqa
         menu.addAction(save_action)
 
         menu.exec_(view.mapToGlobal(pos))
@@ -407,25 +414,32 @@ class mainWindow(QMainWindow):
         menu = QMenu(view)
 
         save_action = QAction("save image", view)
-        save_action.triggered.connect(lambda:  self.saveImage(view))
+        save_action.triggered.connect(lambda:  self.saveImage(view)) # noqa
         menu.addAction(save_action)
 
         menu.exec_(view.mapToGlobal(pos))
 
-    @staticmethod
-    def saveImage(view):
-        file_path, _ = QFileDialog.getSaveFileName(view, "Save image", "image", "*.jpg;*.tif;*.png;;All Files(*)")
+    def saveImage(self, view):
+        pos = self.viewlist.index(view)
+        file_path, _ = QFileDialog.getSaveFileName(view, "Save image",
+                                                   self.title_view_list[pos], "*.jpg;*.tif;*.png;;All Files(*)")
         # print(view.objectName)
         if file_path:
-            scene = view.scene()
-
-            image = QImage(view.viewport().size(), QImage.Format_ARGB32)
-            image.fill(Qt.transparent)
-
-            painter = QPainter(image)
-            scene.render(painter)
-            painter.end()
-            image.save(file_path)
+            # scene = view.scene()
+            #
+            # image = QImage(view.viewport().size(), QImage.Format_ARGB32)
+            # image.fill(Qt.transparent)
+            #
+            # painter = QPainter(image)
+            # scene.render(painter)
+            # painter.end()
+            # image.save(file_path)
+            image_view = self.image_view_list[pos]
+            if image_view is None:
+                msg_box = QMessageBox(QMessageBox.Critical, 'Error', 'Please there is no image here!')
+                msg_box.exec_()
+            else:
+                cv2.imencode('.' + file_path.split('.')[-1], image_view)[1].tofile(file_path) # noqa
 
     def _splider_change(self):
         self.spinBox.setValue(self.splider.value())
@@ -452,8 +466,7 @@ class mainWindow(QMainWindow):
         self.binMarker = None
         self.grayMarker = None
 
-    @staticmethod
-    def print_image(image, view, label=None, title='image'):
+    def print_image(self, image, view, label=None, title='image', is_cache=True):
         image = image.astype(np.uint8)
         # rename title
         if label is not None:
@@ -470,6 +483,12 @@ class mainWindow(QMainWindow):
         view.setRenderHint(QPainter.SmoothPixmapTransform, True)
         view.fitInView(scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
         view.show()
+
+        # for image saving
+        if view in self.viewlist and is_cache:
+            pos = self.viewlist.index(view)
+            self.image_view_list[pos] = image
+            self.title_view_list[pos] = title
 
     @staticmethod
     def drawHist(histogram, view, label=None, title='Histogram'):

@@ -188,7 +188,8 @@ def skeletonization(image, get_sub_skeleton=False, UI=None):
             if r < 100:
                 UI.progressBar.setValue(r)
                 _skeleton = (skeleton > 0).astype(int)
-                UI.print_image(_skeleton * 255, UI.viewLeftBottom, UI.labelLB, title='Skeletonizaiton')
+                UI.print_image(_skeleton * 255, UI.viewLeftBottom, UI.labelLB,
+                               title='Skeletonizaiton', is_cache=False)
         r += 1
         if get_sub_skeleton:
             sub_skeletons.append((subset > 0).astype(np.uint8))  # noqa
@@ -211,7 +212,8 @@ def skeleton_reconstruction(sub_skeletons, UI=None):
             if r < 100:
                 UI.progressBar.setValue(r)
                 _image = (image > 0).astype(int)
-                UI.print_image(_image * 255, UI.viewRightBottom, UI.labelRB, title='Skeleton reconstruction')
+                UI.print_image(_image * 255, UI.viewRightBottom, UI.labelRB,
+                               title='Skeleton reconstruction', is_cache=False)
     image[image > 0] = 1
     return image
 
@@ -298,15 +300,15 @@ def main():
 
     # import skimage.morphology as sm
 
-    image_path = r'.\conditional_dilation_mask.png'
+    image_path = r'.\test image\sa_183.png'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     image = (image < 50).astype(np.uint8)
-    marker_path = r'.\conditional_dilation_marker.png'
-    marker = cv2.imread(marker_path, cv2.IMREAD_GRAYSCALE)
-    marker = cv2.resize(marker,
-                        dsize=(image.shape[1], image.shape[0]),
-                        interpolation=cv2.INTER_NEAREST)
-    marker = (marker < 50).astype(np.uint8)
+    # marker_path = r'.\test image\conditional_dilation_marker.png'
+    # marker = cv2.imread(marker_path, cv2.IMREAD_GRAYSCALE)
+    # marker = cv2.resize(marker,
+    #                     dsize=(image.shape[1], image.shape[0]),
+    #                     interpolation=cv2.INTER_NEAREST)
+    # marker = (marker < 50).astype(np.uint8)
     # cv2.imwrite('1.png', image*255)
     # cv2.imwrite('2.png', marker*255)
     kernel = np.array([[0, 1, 0],
@@ -317,13 +319,13 @@ def main():
     # output = binary_erosion(image, kernel=kernel)
     # output = opening(image, kernel=kernel)
     # output = distance_transform(image, mode='Euclidean')
-    # output, subs = skeletonization(image, get_sub_skeleton=True)
+    output, subs = skeletonization(image, get_sub_skeleton=True)
     # restore = skeleton_reconstruction(subs)
 
     # output = dilation_img2col(image, big_kernel)
     # output = closing(image, big_kernel, erosion=erosion_img2col, dilation=dilation_img2col)
     # output = top_hat_transform(image, k_size=21)
-    output = conditional_dilation(marker, image, kernel)
+    # output = conditional_dilation(marker, image, kernel)
     end = time.time()
     print(end - start)
 
