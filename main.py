@@ -7,7 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5 import uic
-from PyQt5.QtGui import QImage, QPixmap, QFont, QPainter
+from PyQt5.QtGui import QImage, QPixmap, QFont, QPainter, QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QGraphicsScene, QMenu, QAction
 from PyQt5.QtCore import Qt
 
@@ -570,9 +570,11 @@ class mainWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ui = mainWindow()
+    # set icon
+    ico_path = os.path.join(os.path.dirname(__file__), 'corner.ico')
+    icon = QIcon()
+    icon.addPixmap(QPixmap(ico_path), QIcon.Normal, QIcon.Off)
+    ui.setWindowIcon(icon)
+
     ui.show()
-    # ui = Ui_MainWindow()
-    # mainWindow = QtWidgets.QMainWindow()
-    # ui.setupUi(mainWindow)
-    # mainWindow.show()
     sys.exit(app.exec())
