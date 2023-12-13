@@ -145,7 +145,7 @@ class mainWindow(QMainWindow):
         edge = conv2d(self.image, kernel=operator)
         edge = normalization(edge)
         self.print_image(edge, self.viewLeftBottom, self.labelLB,
-                         title='Edge detection of ' + edge_operator_name + 'opterator')
+                         title='Edge detection of {} opterator'.format(edge_operator_name))
 
         # smoothing the image
         filtered_image = None
@@ -183,6 +183,7 @@ class mainWindow(QMainWindow):
             msg_box = QMessageBox(QMessageBox.Critical, 'Sorry',
                                   'Sorry, user custom option is not avialable now, please try other choice!')
             msg_box.exec_()
+            return
 
         # check binary image available
         if self.thres_image is None:
@@ -225,7 +226,8 @@ class mainWindow(QMainWindow):
             self.print_image(self.thres_image * 255, self.viewRightTop, self.labelRT, title=title)
 
         distance = distance_transform(self.thres_image, mode)
-        self.print_image(normalization(distance), self.viewLeftBottom, self.labelLB, title='Distance Tranform')
+        self.print_image(normalization(distance), self.viewLeftBottom, self.labelLB,
+                         title='Distance Tranform by {}'.format(mode))
 
     @check_image_loaded
     def _skeletonBtn_click(self):
@@ -295,11 +297,11 @@ class mainWindow(QMainWindow):
         if self.getGrayEdgeBtn.isChecked():
             edge = edge_decetion(self.image, mode=mode)
             self.print_image(normalization(edge), self.viewLeftBottom, self.labelLB,
-                             title='Gray scale edge decetion')
+                             title='Gray scale {} edge decetion'.format(mode))
         elif self.getGrayGradBtn.isChecked():
             grad = get_gradient(self.image, mode=mode)
             self.print_image(normalization(grad), self.viewRightBottom, self.labelRB,
-                             title='Gray scale gradient of input image')
+                             title='Gray scale {} gradient of input image'.format(mode))
 
     @check_image_loaded
     def _binMarkerBtn_click(self):
