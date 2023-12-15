@@ -182,7 +182,6 @@ def skeletonization(image, get_sub_skeleton=False, UI=None):
             subset = binary_erosion(subset, kernel)
         subset = subset - opening(subset, kernel)
         skeleton = skeleton + subset
-
         # For Qt: update progress
         if UI is not None:
             if r < 100:
@@ -242,7 +241,7 @@ def edge_decetion(image, mode='standard'):
         raise ValueError("the mode must be 'standard', 'external' or 'internal'")
 
 
-def get_gradient(image, mode='strandard'):
+def get_gradient(image, mode='standard'):
     return edge_decetion(image, mode) / 2
 
 
@@ -300,10 +299,10 @@ def main():
 
     # import skimage.morphology as sm
 
-    image_path = r'.\test image\sa_183.png'
+    image_path = r'.\test images\sa_183.jpg'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    image = (image < 50).astype(np.uint8)
-    # marker_path = r'.\test image\conditional_dilation_marker.png'
+    image = (image > 50).astype(np.uint8)
+    # marker_path = r'.\test images\conditional_dilation_marker.png'
     # marker = cv2.imread(marker_path, cv2.IMREAD_GRAYSCALE)
     # marker = cv2.resize(marker,
     #                     dsize=(image.shape[1], image.shape[0]),

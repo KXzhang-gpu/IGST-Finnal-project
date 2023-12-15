@@ -11,10 +11,10 @@ from PyQt5.QtGui import QImage, QPixmap, QFont, QPainter, QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication, QFileDialog, QMessageBox, QGraphicsScene, QMenu, QAction
 from PyQt5.QtCore import Qt
 
-from threshold import *
+from threshold import get_histogram, otsu, entropy, threshold
 from convolution import conv2d_img2col as conv2d
 from convolution import Gaussian_filter, median_filter
-from morphology import *
+import morphology as mo
 
 import warnings
 
@@ -143,6 +143,7 @@ class mainWindow(QMainWindow):
         elif edge_operator_name == 'Sobel':
             operator = Sobel_kernel_x + Sobel_kernel_y
         edge = conv2d(self.image, kernel=operator)
+        edge = np.abs(edge)
         edge = normalization(edge)
         self.print_image(edge, self.viewLeftBottom, self.labelLB,
                          title='Edge detection of {} opterator'.format(edge_operator_name))
@@ -168,7 +169,6 @@ class mainWindow(QMainWindow):
         # get kernel
         kernel_shape = self.binSEshapeCombo.currentText()
         kernel_size = self.binSEsizeSpin.value()
-        kernel = None
         if kernel_shape == 'Square':
             kernel = np.ones((kernel_size, kernel_size))
         elif kernel_shape == 'Cross':
@@ -193,18 +193,18 @@ class mainWindow(QMainWindow):
             title = 'Auto threshold by Otsu with threshold=%d' % thres
             self.print_image(self.thres_image * 255, self.viewRightTop, self.labelRT, title=title)
 
-        # binary morphplogy operation
+        # binary morphology operation
         if self.binErosionBtn.isChecked():
-            viewLB_image = binary_erosion(self.thres_image, kernel)
+            viewLB_image = mo.binary_erosion(self.thres_image, kernel)
             titleLB = 'Result of binary erosion'
         elif self.binOpenBtn.isChecked():
-            viewLB_image = opening(self.thres_image, kernel)
+            viewLB_image = mo.opening(self.thres_image, kernel)
             titleLB = 'Result of binary opening'
         if self.binDilationBtn.isChecked():
-            viewRB_image = binary_dilation(self.thres_image, kernel)
+            viewRB_image = mo.binary_dilation(self.thres_image, kernel)
             titleRB = 'Result of binary dilation'
         elif self.binCloseBtn.isChecked():
-            viewRB_image = closing(self.thres_image, kernel)
+            viewRB_image = mo.closing(self.thres_image, kernel)
             titleRB = 'Result of binary closing'
 
         # show the results
@@ -225,7 +225,7 @@ class mainWindow(QMainWindow):
             title = 'Auto threshold by Otsu with threshold=%d' % thres
             self.print_image(self.thres_image * 255, self.viewRightTop, self.labelRT, title=title)
 
-        distance = distance_transform(self.thres_image, mode)
+        distance = mo.distance_transform(self.thres_image, mode)
         self.print_image(normalization(distance), self.viewLeftBottom, self.labelLB,
                          title='Distance Tranform by {}'.format(mode))
 
@@ -242,13 +242,13 @@ class mainWindow(QMainWindow):
         self.progressBar.setValue(0)
         self.progressBar.setVisible(True)
         if self.getSkeletonBtn.isChecked():
-            skeleton, self.sub_skeletons = skeletonization(self.thres_image, get_sub_skeleton=True, UI=self)
+            skeleton, self.sub_skeletons = mo.skeletonization(self.thres_image, get_sub_skeleton=True, UI=self)
             self.print_image(skeleton * 255, self.viewLeftBottom, self.labelLB, title='Skeletonizaiton')
         elif self.restoreSkeletonBtn.isChecked():
             if self.sub_skeletons is None:
                 pass
             else:
-                image = skeleton_reconstruction(self.sub_skeletons, UI=self)
+                image = mo.skeleton_reconstruction(self.sub_skeletons, UI=self)
                 self.print_image(image * 255, self.viewRightBottom, self.labelRB, title='Skeleton reconstruction')
         self.progressBar.setValue(100)
 
@@ -275,16 +275,16 @@ class mainWindow(QMainWindow):
 
         # binary morphplogy operation
         if self.binErosionBtn.isChecked():
-            viewLB_image = erosion_img2col(self.image, kernel)
+            viewLB_image = mo.erosion_img2col(self.image, kernel)
             titleLB = 'Result of gray erosion'
         elif self.binOpenBtn.isChecked():
-            viewLB_image = gray_opening(self.image, kernel)
+            viewLB_image = mo.gray_opening(self.image, kernel)
             titleLB = 'Result of gray opening'
         if self.binDilationBtn.isChecked():
-            viewRB_image = dilation_img2col(self.image, kernel)
+            viewRB_image = mo.dilation_img2col(self.image, kernel)
             titleRB = 'Result of gray dilation'
         elif self.binCloseBtn.isChecked():
-            viewRB_image = gray_closing(self.image, kernel)
+            viewRB_image = mo.gray_closing(self.image, kernel)
             titleRB = 'Result of gray closing'
 
         # show the results
@@ -295,11 +295,11 @@ class mainWindow(QMainWindow):
     def _grayEdgeGradBtn_click(self):
         mode = self.grayEdgeCombo.currentText()
         if self.getGrayEdgeBtn.isChecked():
-            edge = edge_decetion(self.image, mode=mode)
+            edge = mo.edge_decetion(self.image, mode=mode)
             self.print_image(normalization(edge), self.viewLeftBottom, self.labelLB,
                              title='Gray scale {} edge decetion'.format(mode))
         elif self.getGrayGradBtn.isChecked():
-            grad = get_gradient(self.image, mode=mode)
+            grad = mo.get_gradient(self.image, mode=mode)
             self.print_image(normalization(grad), self.viewRightBottom, self.labelRB,
                              title='Gray scale {} gradient of input image'.format(mode))
 
@@ -308,24 +308,39 @@ class mainWindow(QMainWindow):
         # load image form given path
         file_path, _ = QFileDialog.getOpenFileName(self, "Set your Marker", "img", "*.jpg;*.tif;*.png;;All Files(*)")
         if file_path:
-            # print marker to ui
-            self.binMarker = threshold(cv2.imread(file_path, cv2.IMREAD_GRAYSCALE), 50)
-            h, w = self.image.shape
-            self.binMarker = cv2.resize(self.binMarker, dsize=(w, h), interpolation=cv2.INTER_NEAREST)
-            self.print_image(self.binMarker * 255, self.viewLeftBottom, self.labelLB, title='Marker')
+            try:
+                marker = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
+                if marker is not None:
+                    self.binMarker = threshold(marker, 50)
+                    h, w = self.image.shape
+                    self.binMarker = cv2.resize(self.binMarker, dsize=(w, h), interpolation=cv2.INTER_NEAREST)
+                    self.print_image(self.binMarker * 255, self.viewLeftBottom, self.labelLB, title='Marker')
+                    return
+            except Exception:
+                pass
+            msg_box = QMessageBox(QMessageBox.Critical, 'Error', 'This file may not be an image!')
+            msg_box.exec_()
 
         # self.draw_board(self.thres_image * 255, self.viewLeftBottom, self.labelLB, title='Set your Marker here')
 
     @check_image_loaded
     def _grayMarkerBtn_click(self):
         # load image form given path
-        file_path, _ = QFileDialog.getOpenFileName(self, "Set your Marker", "img", "*.jpg;*.tif;*.png;;All Files(*)")
-        # print marker to ui
-        if not file_path == '':
-            self.grayMarker = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-            h, w = self.image.shape
-            self.grayMarker = cv2.resize(self.grayMarker, dsize=(w, h), interpolation=cv2.INTER_CUBIC)
-            self.print_image(self.grayMarker, self.viewLeftBottom, self.labelLB, title='Marker')
+        file_path, _ = QFileDialog.getOpenFileName(self, "Set your Marker", "img",
+                                                   "*.jpg;*.tif;*.png;;All Files(*)")
+        if file_path:
+            try:
+                marker = cv2.imdecode(np.fromfile(file_path, dtype=np.uint8), 0)
+                if marker is not None:
+                    self.grayMarker = marker
+                    h, w = self.image.shape
+                    self.grayMarker = cv2.resize(self.grayMarker, dsize=(w, h), interpolation=cv2.INTER_CUBIC)
+                    self.print_image(self.grayMarker, self.viewLeftBottom, self.labelLB, title='Marker')
+                    return
+            except Exception:
+                pass
+            msg_box = QMessageBox(QMessageBox.Critical, 'Error', 'This file may not be an image!')
+            msg_box.exec_()
 
     @check_image_loaded
     def _conditionalDilationBtn_click(self):
@@ -359,7 +374,7 @@ class mainWindow(QMainWindow):
                                       'Sorry, user custom option is not avialable now, please try other choice!')
                 msg_box.exec_()
 
-            output = conditional_dilation(marker=self.binMarker, mask=self.thres_image, kernel=kernel)
+            output = mo.conditional_dilation(marker=self.binMarker, mask=self.thres_image, kernel=kernel)
             self.print_image(output * 255, self.viewRightBottom, self.labelRB, title='Conditional dilation result')
 
     @check_image_loaded
@@ -387,7 +402,7 @@ class mainWindow(QMainWindow):
                                       'Sorry, user custom option is not avialable now, please try other choice!')
                 msg_box.exec_()
 
-            output = grayscale_reconstruction(marker=self.grayMarker, mask=self.image, kernel=kernel)
+            output = mo.grayscale_reconstruction(marker=self.grayMarker, mask=self.image, kernel=kernel)
             self.print_image(output, self.viewRightBottom, self.labelRB, title='Gray scale reconstruction result')
 
     def component_init(self):
